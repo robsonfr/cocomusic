@@ -3,24 +3,22 @@ import PIL.ImageDraw as dr
 import cv2
 import numpy as np
 
-fundo=im.open("oscillosc.png")
-
 # 32 - 160
 def render(frame_index : int, channels : list) -> im.Image:
-    frame=fundo.copy()
+    frame=im.new("RGB",(1280,720))
     draw = dr.Draw(frame)
     pos = frame_index * 102
     for i, channel in enumerate(channels):
-        mx = (i % 2) * 310 + 20
-        my = ((i >> 1) % 2) * 274 + 16
-        coords = list(zip((x * 3 + mx for x in range(102)),((64 - v) * 2 + my for v in channel[pos:pos+102])))
+        mx = 20
+        my = i * 144 
+        coords = list(zip((x * 12 + mx for x in range(102)),((64 - v) * 2 + my for v in channel[pos:pos+102])))
         for n in range(1,len(coords)):
             draw.line(xy=(coords[n-1][0],coords[n-1][1],coords[n][0],coords[n][1]), fill=(255,255,255))
-    return frame.convert('RGB')
+    return frame
 
-def process(channels : list):
+def process(channels : list, filename : str):
     frame_count = len(channels[0]) // 102
-    writer = cv2.VideoWriter("demo.mp4", cv2.VideoWriter_fourcc(*'mp4v'),30,(640,480))
+    writer = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'mp4v'),30,(1280,720))
     #writer.open("demo.mpg")
     for f in range(frame_count):
         frame=np.array(render(f, channels))
