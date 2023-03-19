@@ -1,7 +1,22 @@
 import pyaudio
 import time
+import wave
+from osc import render, process
+
+import sys
+import getopt
+
+def load_from_binary(bindata : bytes):
+    sample_data = bindata[:256]
+    notes = bindata[256:256+132]
+    tempo = bindata[0x254]
+    music = bindata[0x2B4:]
+    return (sample_data, notes, tempo, music)
+
+opts, args = getopt.getopt(sys.argv[1:],'i:Aa')
+
 RATE=3065
-TEMPO=0x68
+TEMPO=0x34
 sample_data = [0x0D,0x0E,0x0F,0x11,0x12,0x14,0x15,0x16,
         0x18,0x19,0x1B,0x1C,0x1D,0x1F,0x20,0x22,
         0x23,0x26,0x27,0x29,0x2A,0x2B,0x2D,0x2E,
@@ -34,7 +49,7 @@ sample_data = [0x0D,0x0E,0x0F,0x11,0x12,0x14,0x15,0x16,
         0x04,0x04,0x04,0x04,0x03,0x03,0x03,0x04,
         0x04,0x04,0x04,0x04,0x04,0x06,0x06,0x06,
         0x07,0x07,0x07,0x08,0x0A,0x0A,0x0B,0x0D]
-sample_data=list(x * 4 for x in sample_data)
+#sample_data=list(x * 4 for x in sample_data)
 print(len(sample_data))
 
 notes=[
@@ -2242,8 +2257,9 @@ music=[ 0x20,0x40,0x30,0x1E,0x10,
 ]
 
 output_data = []
+channels_data = [[],[],[],[]]
+indexes = [0,0,0,0]
 for u in range(len(music) // 5):
-    indexes = [0,0,0,0]
     dur, curnotes = music[u*5], music[u*5+1:u*5+5]
     cn = curnotes[0]
     if dur == 0:
@@ -2253,18 +2269,26 @@ for u in range(len(music) // 5):
         s = 0
         for j,cn in enumerate(curnotes):
             i = (indexes[j] >> 8) & 255
-            s += sample_data[i]
+            #if notes[cn] == 0:
+            #    v = 0
+            #else:
+            v = sample_data[i]
+            
+            channels_data[j].append(v)
+            s += (v << 2)
+            
+            carry = 1 if s > 255 else 0
             indexes[j] += (notes[cn] << 8) + notes[cn+1]
             indexes[j] = indexes[j] & 65535
         output_data.append(s >> 2)
         d -= 1
 
-print(len(output_data))
+#print(len(output_data))
+process(channels_data)
 
 pos = 0
 def callbk(in_data, frame_count, time_info, status_flags):
     global pos
-    global output_data
     data=bytes(output_data[pos:pos+frame_count])
     pos += frame_count
     ret = pyaudio.paComplete if pos >= len(output_data) else pyaudio.paContinue
@@ -2277,11 +2301,18 @@ audio = pyaudio.PyAudio()
 #for i in range(audio.get_device_count()):
 #    print(audio.get_device_info_by_index(i))
 
-stream=audio.open(rate=RATE,channels=1,format=pyaudio.paUInt8, output=True,output_device_index=13,stream_callback=callbk)
+#stream=audio.open(rate=RATE,channels=1,format=pyaudio.paUInt8,stream_callback=callbk)
 
-while stream.is_active():
-    time.sleep(0.1)
+wavfile = wave.open("demo.wav","wb")
+wavfile.setnchannels(1)
+wavfile.setsampwidth(audio.get_sample_size(pyaudio.paUInt8))
+wavfile.setframerate(RATE)
+wavfile.writeframes(bytes(output_data))
+wavfile.close()
 
-stream.close()
+#while stream.is_active():
+#    time.sleep(0.1)
+
+#stream.close()
 
 audio.terminate()
