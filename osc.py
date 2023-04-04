@@ -3,7 +3,7 @@ import PIL.ImageDraw as dr
 import cv2
 import numpy as np
 
-SIZE = (1280,720)
+SIZE = (720,480)
 # 32 - 160
 def render(frame_index : int, channels : list) -> im.Image:
     NUM_CHANNELS = len(channels)
@@ -13,7 +13,7 @@ def render(frame_index : int, channels : list) -> im.Image:
     frame=im.new("RGB",SIZE)
     draw = dr.Draw(frame)
     
-    pos = frame_index * 102
+    pos = frame_index * 204
     for i, channel in enumerate(channels):
         my = i * CHAN_HEIGHT + (CHAN_LIM / 2.0)
         coords = list(zip((x for x in range(SIZE[0])),(int((32.0 - v) * FACTOR + my) for v in channel[pos:pos+SIZE[0]])))
@@ -22,7 +22,7 @@ def render(frame_index : int, channels : list) -> im.Image:
     return frame
 
 def process(channels : list, filename : str):
-    frame_count = len(channels[0]) // 102
+    frame_count = len(channels[0]) // 204
     writer = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'mp4v'),30,SIZE)
     #writer.open("demo.mpg")
     for f in range(frame_count):

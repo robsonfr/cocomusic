@@ -10,7 +10,7 @@ import os
 def load_from_binary(bindata : bytes):
     sample_data = bindata[:256]
     notes = bindata[256:512]
-    tempo = bindata[0x254] >> 1
+    tempo = bindata[0x254]
     music = bindata[0x2B4:]
     return (sample_data, notes, tempo, music)
 
@@ -71,7 +71,7 @@ def main():
         with open(inpfilename,'rb') as inp:
             data = inp.read()
         
-        RATE=3065
+        RATE=6130
         #TEMPO=0x34
         sample_data, notes, tempo, music = load_from_binary(data[5:])
         output_data, channels_data = create_outputdata(tempo, music, sample_data,notes)
