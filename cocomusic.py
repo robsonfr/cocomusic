@@ -65,6 +65,7 @@ def main():
             generate_audio = True
 
     if inpfilename:
+        print(inpfilename)
         video_file = inpfilename[:-3] + 'mp4'
 
         with open(inpfilename,'rb') as inp:
@@ -84,5 +85,6 @@ def main():
             audio_proc=f' -i {audio_file} -ar 44100 '
 
         os.system(f'ffmpeg -i {video_file}{audio_proc}full_{video_file}')
+
 if __name__ == '__main__':
     main()
